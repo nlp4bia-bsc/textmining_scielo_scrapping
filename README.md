@@ -1,0 +1,1 @@
+# Textmining Scielo Scrapping

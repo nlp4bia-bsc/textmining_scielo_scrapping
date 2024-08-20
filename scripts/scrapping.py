@@ -6,8 +6,8 @@ import pandas as pd
 
 from airflow.decorators import task
 from airflow.operators.python import get_current_context
-from scielo_scrapping.scripts.utils import xml_string_to_dict
-from scielo_scrapping.environment import env
+from textmining_scielo_scrapping.scripts.utils import xml_string_to_dict
+from textmining_scielo_scrapping.environment import env
 
 
 scielo_api = env["scielo-api-path"]["xml"]
