@@ -1,0 +1,31 @@
+scielo-path:
+  argentina: http://www.scielo.org.ar
+  bolivia: http://www.scielo.org.bo
+  chile: https://www.scielo.cl
+  colombia: http://www.scielo.org.co
+  costa-rica: https://www.scielo.sa.cr
+  cuba: http://scielo.sld.cu
+  ecuador: http://scielo.senescyt.gob.ec
+  mexico: https://www.scielo.org.mx
+  paraguay: http://scielo.iics.una.py
+  peru: http://www.scielo.org.pe
+  portugal: https://www.scielo.pt
+  spain: https://scielo.isciii.es
+  south-africa: https://scielo.org.za
+  uruguay: http://www.scielo.edu.uy
+
+scielo-path-not-php:
+  brazil: https://www.scielo.br
+  public-health: https://scielosp.org
+
+scielo-api-path:
+  xml: oai/scielo-oai.php
+  front: scielo.php
+
+paths:
+  get_magazines_path: "verb=ListSets"
+  get_records_path: "verb=ListRecords"
+  get_pdf: "script=sci_pdf&pid="
+
+headers:
+  User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
