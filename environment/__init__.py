@@ -1,6 +1,6 @@
 import yaml
 
-env_file = 'dags/scielo_scrapping/environment/application-prod.yml'
+env_file = 'dags/textmining_scielo_scrapping/environment/application-prod.yml'
 
 def read_yaml(file_path):
     with open(file_path, 'r') as file:
