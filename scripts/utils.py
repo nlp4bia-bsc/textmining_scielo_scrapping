@@ -7,7 +7,7 @@ def xml_string_to_dict(xml_string):
             xml_string_utf8 = xml_bytes.decode('utf-8')
         else:
             xml_string_utf8 = xml_string.decode('utf-8')
-        
+
         xml_dict = xmltodict.parse(xml_string_utf8)
         return xml_dict
     except Exception as e:
