@@ -71,7 +71,7 @@ def get_all_records_from_magazine(scielo_country_path, records_list_path, magazi
     if "ListRecords" in data.keys():
         preprocess_data = preprocess_json_records(data["ListRecords"]["record"])
 
-        if data["ListRecords"]["resumptionToken"]:
+        if "resumptionToken" in data["ListRecords"].keys():
             record_list = get_all_records_from_magazine(
                 scielo_country_path,
                 records_list_path,
