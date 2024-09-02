@@ -1,4 +1,5 @@
 import os
+from pandas.io.xml import preprocess_data
 import requests
 import fitz
 import json
@@ -15,7 +16,7 @@ scielo_front = env["scielo-api-path"]["front"]
 
 def transform_array(input_array):
     output_array = []
-    
+
     for item in input_array:
         if isinstance(item['setSpec'], list) and isinstance(item['setName'], list):
             for spec, name in zip(item['setSpec'], item['setName']):
@@ -26,7 +27,7 @@ def transform_array(input_array):
 
         else:
             output_array.append(item)
-    
+
     return output_array
 
 
@@ -35,7 +36,7 @@ def get_magazine_list(country):
     magazine_list_path = env["paths"]["get_magazines_path"]
     scielo_country_path = env["scielo-path"][country]
     url = f"{scielo_country_path}/{scielo_api}?{magazine_list_path}"
-
+    print(url)
     response = requests.get(url, headers=env["headers"])
     magazines_metadata = xml_string_to_dict(response.text)
 
@@ -53,6 +54,36 @@ def preprocess_json_records(records):
     return preprocess_records
 
 
+def get_all_records_from_magazine(scielo_country_path, records_list_path, magazine_name, resumption_token=None):
+    url = f"{scielo_country_path}/{scielo_api}?{records_list_path}&set={magazine_name}"
+
+    if resumption_token != None:
+        url = f"{url}&resumptionToken={resumption_token}"
+
+    print(url)
+
+    response = requests.get(url, headers=env["headers"])
+    records_metadata = xml_string_to_dict(response.text)
+
+
+    data = records_metadata["OAI-PMH"]
+
+    if "ListRecords" in data.keys():
+        preprocess_data = preprocess_json_records(data["ListRecords"]["record"])
+
+        if data["ListRecords"]["resumptionToken"]:
+            record_list = get_all_records_from_magazine(
+                scielo_country_path,
+                records_list_path,
+                magazine_name,
+                resumption_token=data["ListRecords"]["resumptionToken"]
+            )
+
+            if record_list:
+                return preprocess_data + record_list
+        return preprocess_data
+
+
 @task(map_index_template="{{ country_magazines['country'] }}")
 def get_records_list(country_magazines):
     magazine_list = country_magazines["magazines"]
@@ -63,17 +94,16 @@ def get_records_list(country_magazines):
 
     records = {}
     for magazine in magazine_list:
-
         print(f"Getting records from {magazine['setName']}")
-        url = f"{scielo_country_path}/{scielo_api}?{records_list_path}&set={magazine['setSpec']}"
+        records_from_magazine =  get_all_records_from_magazine(
+            scielo_country_path,
+            records_list_path,
+            magazine['setSpec'],
+        )
 
-        response = requests.get(url, headers=env["headers"])
-        records_metadata = xml_string_to_dict(response.text)
-        
-        data = records_metadata["OAI-PMH"]
-        if "ListRecords" in data.keys():
-            records[magazine['setName']] = preprocess_json_records(data["ListRecords"]["record"])
-    
+        if records_from_magazine:
+            records[magazine['setName']] = records_from_magazine
+
     return {"records": records, "country": country}
 
 
@@ -99,13 +129,13 @@ def download_scielo_article(url, save_path):
     else:
         print(f"Error downloading the file: {response.status_code}")
         return None
-    
+
 
 def extract_text_from_pdf(file_path, save_path):
     pdf_document = fitz.open(file_path)
-    
+
     text = ""
-    
+
     for page_num in range(len(pdf_document)):
         page = pdf_document.load_page(page_num)
         text += page.get_text()
@@ -121,7 +151,6 @@ def is_exists(identifier, country):
     txt_path = f"{path}/{identifier}.txt"
 
     return os.path.exists(pdf_path) and os.path.exists(txt_path)
-
 
 def get_txt_path(record, country):
     try:
@@ -141,8 +170,8 @@ def get_txt_path(record, country):
         if not pdf_url or "None" in pdf_url:
             print(f"Error in url to download: {record_identifier}")
             return None
-        
-        
+
+
         pdf_path = download_scielo_article(pdf_url, f"{main_path}.pdf")
         txt_path = extract_text_from_pdf(pdf_path, f"{main_path}.txt")
 
@@ -168,7 +197,8 @@ def get_records_text(country_records):
     record_path = {}
 
     for magazine in magazine_list.keys():
-        record_path[magazine] = get_txt_path_bulk(magazine_list[magazine], country)
+        if "Reflexiones en torno al poder del consumidor alimentario" == magazine:
+            record_path[magazine] = get_txt_path_bulk(magazine_list[magazine], country)
 
     return {"magazines": record_path, "country": country}
 
@@ -178,15 +208,15 @@ def save_metadata(records):
     data = records["magazines"]
     country = records["country"]
     dfs = []
-    
+
     output_dir = f"/storage/temp/scielo_{country}"
     os.makedirs(output_dir, exist_ok=True)
-    
+
     json_path = f"{output_dir}/raw_data.json"
     with open(json_path, 'w', encoding='utf-8') as f:
         json.dump(records, f, ensure_ascii=False, indent=4)
     print(f"Raw data saved as JSON in {json_path}")
-    
+
     for magazine, list_dict in data.items():
         valid_dicts = [d for d in list_dict if d is not None and d]
         if valid_dicts:
@@ -195,7 +225,7 @@ def save_metadata(records):
             dfs.append(df)
         else:
             print(f"Warning: No valid data for magazine {magazine}")
-    
+
     if dfs:
         df_final = pd.concat(dfs, ignore_index=True)
         csv_path = f"{output_dir}/metadata.csv"
@@ -206,4 +236,3 @@ def save_metadata(records):
 
     dest_dir_temp = f"/storage/temp/scielo_{country}"
     print(f"Download the new version in https://textmining2.bsc.es/api/pipelines/download?path={dest_dir_temp}")
-    
