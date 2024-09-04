@@ -55,33 +55,32 @@ def preprocess_json_records(records):
 
 
 def get_all_records_from_magazine(scielo_country_path, records_list_path, magazine_name, resumption_token=None):
-    url = f"{scielo_country_path}/{scielo_api}?{records_list_path}&set={magazine_name}"
+    all_records = []
+    while True:
+        url = f"{scielo_country_path}/{scielo_api}?{records_list_path}&set={magazine_name}"
 
-    if resumption_token != None:
-        url = f"{url}&resumptionToken={resumption_token}"
+        if resumption_token:
+            url = f"{url}&resumptionToken={resumption_token}"
 
-    print(url)
+        print(url)
 
-    response = requests.get(url, headers=env["headers"])
-    records_metadata = xml_string_to_dict(response.text)
+        response = requests.get(url, headers=env["headers"])
+        records_metadata = xml_string_to_dict(response.text)
 
+        data = records_metadata["OAI-PMH"]
 
-    data = records_metadata["OAI-PMH"]
+        if "ListRecords" in data.keys():
+            preprocess_data = preprocess_json_records(data["ListRecords"]["record"])
+            all_records.extend(preprocess_data)
 
-    if "ListRecords" in data.keys():
-        preprocess_data = preprocess_json_records(data["ListRecords"]["record"])
+            if "resumptionToken" in data["ListRecords"].keys():
+                resumption_token = data["ListRecords"]["resumptionToken"]
+            else:
+                break
+        else:
+            break
 
-        if "resumptionToken" in data["ListRecords"].keys():
-            record_list = get_all_records_from_magazine(
-                scielo_country_path,
-                records_list_path,
-                magazine_name,
-                resumption_token=data["ListRecords"]["resumptionToken"]
-            )
-
-            if record_list:
-                return preprocess_data + record_list
-        return preprocess_data
+    return all_records
 
 
 @task(map_index_template="{{ country_magazines['country'] }}")
