@@ -26,4 +26,5 @@ with DAG(
     country_magazines = get_magazine_list.expand(country=countries)
     country_records = get_records_list.expand(country_magazines=country_magazines)
     records = get_records_text.expand(country_records=country_records)
-    save_metadata.expand(records=records)
+
+    countries >> country_magazines >> country_records >> records
