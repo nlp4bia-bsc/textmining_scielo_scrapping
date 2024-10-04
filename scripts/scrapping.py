@@ -104,6 +104,10 @@ def get_all_records_from_magazine(scielo_country_path, records_list_path, magazi
         response = requests.get(url, headers=env["headers"])
         records_metadata = xml_string_to_dict(response.text)
 
+        if "OAI-PMH" not in records_metadata:
+            print(f"Error: 'OAI-PMH' key not found in records_metadata for URL {url}")
+            break
+
         data = records_metadata["OAI-PMH"]
 
         if "ListRecords" in data.keys():
@@ -200,7 +204,6 @@ def extract_text_from_pdf(file_path, save_path):
     pdf_document = fitz.open(file_path)
 
     text = ""
-
     for page_num in range(len(pdf_document)):
         page = pdf_document.load_page(page_num)
         text += page.get_text()
@@ -247,9 +250,9 @@ def get_txt_path(record, country, output_dir):
         return None
 
 
-def get_txt_path_bulk(record_list, country):
+def get_txt_path_bulk(record_list, country, output_dir):
     return [
-        get_txt_path(record, country) for record in record_list
+        get_txt_path(record, country, output_dir) for record in record_list
     ]
 
 
@@ -272,15 +275,30 @@ def get_records_text(country_records):
     else:
         metadata = {"records": {}, "country": country}
 
+    iteration_count = 0
+    files_to_process = len(os.listdir(input_dir))
+    files_processed = 0
+
     # Iterate over all JSON files in the input directory
     for filename in os.listdir(input_dir):
+        print(f"{files_processed}/{files_to_process-1}: Processing file {filename}")
         if filename.endswith(".json") and filename != f"{country}_record_metadata.json":
             file_path = os.path.join(input_dir, filename)
             with open(file_path, 'r', encoding='utf-8') as json_file:
                 records = json.load(json_file)
 
             for record in records:
-                record_identifier = record["identifier"].split(":")[2]
+                if not isinstance(record, dict):
+                    print(f"Record is not a dictionary. Skipping... Record: {record}")
+                    continue
+
+                identifier_parts = record.get("identifier", "").split(":")
+                if len(identifier_parts) < 3:
+                    print(f"Identifier {record['identifier']} does not have enough parts. Skipping...")
+                    print(f"Record: {record}")
+                    continue
+
+                record_identifier = identifier_parts[2]
                 if record_identifier not in metadata["records"]:
                     pdf_path = os.path.join(output_dir, f"{record_identifier}.pdf")
                     txt_path = os.path.join(output_dir, f"{record_identifier}.txt")
@@ -295,9 +313,16 @@ def get_records_text(country_records):
                         if updated_record:
                             metadata["records"][record_identifier] = updated_record
 
-                    # Save metadata after processing each record
-                    with open(metadata_file_path, 'w', encoding='utf-8') as metadata_file:
-                        json.dump(metadata, metadata_file, ensure_ascii=False, indent=4)
+                    iteration_count += 1
+
+                    if iteration_count % 10 == 0:
+                        with open(metadata_file_path, 'w', encoding='utf-8') as metadata_file:
+                            json.dump(metadata, metadata_file, ensure_ascii=False, indent=4)
+        files_processed += 1
+
+    if iteration_count % 10 != 0:
+        with open(metadata_file_path, 'w', encoding='utf-8') as metadata_file:
+            json.dump(metadata, metadata_file, ensure_ascii=False, indent=4)
 
     return metadata_file_path
 
