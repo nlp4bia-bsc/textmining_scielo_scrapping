@@ -102,7 +102,18 @@ def get_all_records_from_magazine(scielo_country_path, records_list_path, magazi
             continue
 
         response = requests.get(url, headers=env["headers"])
+
+        # Check if the response is valid
+        if response.status_code != 200:
+            print(f"Error: Received status code {response.status_code} for URL {url}")
+            break
+
         records_metadata = xml_string_to_dict(response.text)
+
+        # Check if records_metadata is None
+        if records_metadata is None:
+            print(f"Error: Failed to parse XML for URL {url}")
+            break
 
         if "OAI-PMH" not in records_metadata:
             print(f"Error: 'OAI-PMH' key not found in records_metadata for URL {url}")
