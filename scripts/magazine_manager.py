@@ -1,6 +1,7 @@
 import csv
 import re
 import requests  # type: ignore
+import os
 
 from airflow.decorators import task  # type: ignore
 from bs4 import BeautifulSoup  # type: ignore
@@ -151,7 +152,12 @@ def process_magazines(country):
       2. Para cada revista, extrae los detalles de la página de SciELO.
       3. Genera el CSV con los datos recolectados.
     """
-    output_file = f"/storage/temp/scielov2/{country}/scielo_{country}_magazines.csv"
+    output_folder = f"/storage/temp/scielov2/{country}"
+
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    output_file = f"{output_folder}/scielo_{country}_magazines.csv"
     magazine_list_data = get_magazine_list(country)
     magazines = magazine_list_data.get("magazines", [])
 
