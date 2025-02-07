@@ -153,11 +153,12 @@ def process_magazines(country):
       3. Genera el CSV con los datos recolectados.
     """
     output_folder = f"/storage/temp/scielov2/{country}"
-
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
-
     output_file = f"{output_folder}/scielo_{country}_magazines.csv"
+
+    if os.path.exists(output_file):
+        print(f"Magazines metadata downloaded in: {output_file}")
+        return
+
     magazine_list_data = get_magazine_list(country)
     magazines = magazine_list_data.get("magazines", [])
 
@@ -170,6 +171,9 @@ def process_magazines(country):
         details = get_magazine_details(set_spec, country)
         if details:
             magazines_details.append(details)
+
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
 
     generate_csv(magazines_details, output_file)
     print(f"CSV generado: {output_file}")
