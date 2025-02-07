@@ -13,6 +13,7 @@ scielo-path:
   spain: https://scielo.isciii.es
   south-africa: https://scielo.org.za
   uruguay: http://www.scielo.edu.uy
+  venezuela: https://ve.scielo.org/
 
 scielo-path-not-php:
   brazil: https://www.scielo.br

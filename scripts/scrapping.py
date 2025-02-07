@@ -35,7 +35,14 @@ def transform_array(input_array):
 @task(map_index_template="{{ country }}")
 def get_magazine_list(country):
     magazine_list_path = env["paths"]["get_magazines_path"]
-    scielo_country_path = env["scielo-path"][country]
+    # todo modifico esto para handle casos con no php
+    if country in env["scielo-path"]:
+        scielo_country_path = env["scielo-path"][country]
+    elif country in env["scielo-path-not-php"]:
+        scielo_country_path = env["scielo-path-not-php"][country]
+    else:
+        raise KeyError(f"Country '{country}' not found in either scielo-path")
+
     url = f"{scielo_country_path}/{scielo_api}?{magazine_list_path}"
     print(url)
 
@@ -50,9 +57,12 @@ def get_magazine_list(country):
         return {"magazine_path": json_file_path, "country": country}
 
     # If the file does not exist, download the data
-    response = requests.get(url, headers=env["headers"])
-    magazines_metadata = xml_string_to_dict(response.text)
+    response = requests.get(url, headers=env["headers"], timeout= 10)
+    print("Response headers: ",response)
+    # Let requests handle encoding or set it based on response headers
+    response.encoding = response.apparent_encoding
 
+    magazines_metadata = xml_string_to_dict(response.text)
     magazines_sets_list = transform_array(magazines_metadata["OAI-PMH"]["ListSets"]["set"])
 
     # Write the data to the JSON file with proper encoding
@@ -101,7 +111,10 @@ def get_all_records_from_magazine(scielo_country_path, records_list_path, magazi
                     break  # Exit the loop if no resumptionToken is found
             continue
 
-        response = requests.get(url, headers=env["headers"])
+        response = requests.get(url, headers=env["headers"], timeout=10)
+        print("modified-- response headers -- getallrecords from magazine", response)
+        #TODO- Let requests handle encoding or set it based on response headers
+        response.encoding = response.apparent_encoding
 
         # Check if the response is valid
         if response.status_code != 200:
@@ -197,7 +210,10 @@ def extract_window_location(html_text):
 
 
 def download_scielo_article(url, save_path):
-    response = requests.get(url, headers=env["headers"])
+    response = requests.get(url, headers=env["headers"], timeout=10)
+    print("modified response download_scielo_article", response) 
+    # Let requests handle encoding or set it based on response headers
+    response.encoding = response.apparent_encoding
 
     if response.status_code == 200:
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
@@ -243,7 +259,8 @@ def get_txt_path(record, country, output_dir):
             record['txt_path'] = f"{main_path}.txt"
             return record
 
-        response = requests.get(url=f"{scielo_country_path}/{scielo_front}?{scielo_get_pdf_path}{record_identifier}", headers=env["headers"])
+        response = requests.get(url=f"{scielo_country_path}/{scielo_front}?{scielo_get_pdf_path}{record_identifier}", headers=env["headers"], timeout=10)
+        response.encoding = "ISO-8859-1" 
         pdf_url = extract_window_location(response.text)
 
         if not pdf_url or "None" in pdf_url:
@@ -371,3 +388,4 @@ def save_metadata(records):
 
     dest_dir_temp = f"/storage/temp/scielo_{country}"
     print(f"Download the new version in https://textmining2.bsc.es/api/pipelines/download?path={dest_dir_temp}")
+

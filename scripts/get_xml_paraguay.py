@@ -70,6 +70,6 @@ def main(input_directory, output_directory):
         print(f"Progress: {progress:.2f}% ({index + 1}/{total_files}) - {file_name}")
 
 if __name__ == "__main__":
-    input_directory = "/data/str/temp/scielo_metadata/chile_scielo_records_txt"
-    output_directory = "/data/str/temp/scielo_metadata/chile_scielo_records_xml"
+    input_directory = "/data/str/temp/scielo_metadata/costa-rica_scielo_records_txt"
+    output_directory = "/data/str/temp/scielo_metadata/costa-rica_scielo_records_xml"
     main(input_directory, output_directory)
