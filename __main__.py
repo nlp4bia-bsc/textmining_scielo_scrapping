@@ -6,6 +6,9 @@ from airflow.decorators import task  # type: ignore
 #     get_records_text,
 #     save_metadata,
 # )
+from textmining_scielo_scrapping.scripts.records_manager import (  # type: ignore
+    get_records_list
+)
 from textmining_scielo_scrapping.scripts.magazine_manager import (  # type: ignore
     process_magazines
 )
@@ -28,6 +31,6 @@ with DAG(
 ) as dag:
     countries = get_args()
     country_magazines = process_magazines.expand(country=countries)
-    # country_records = get_records_list.expand(country_magazines=country_magazines)
+    country_records = get_records_list.expand(country_magazines=country_magazines)
     # records = get_records_text.expand(country_records=country_records)
     # save_metadata.expand(records=records)

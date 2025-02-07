@@ -26,6 +26,7 @@ paths:
   get_magazines_path: "verb=ListSets"
   get_records_path: "verb=ListRecords"
   get_pdf: "script=sci_pdf&pid="
+  get_magazines_path_front: script=sci_alphabetic&lng=es&nrm=iso
 
 headers:
   User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"

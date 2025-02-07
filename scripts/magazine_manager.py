@@ -5,9 +5,10 @@ import os
 
 from airflow.decorators import task  # type: ignore
 from bs4 import BeautifulSoup  # type: ignore
+from urllib.parse import urlparse, parse_qs
 
 from textmining_scielo_scrapping.environment import env  # type: ignore
-from textmining_scielo_scrapping.scripts.utils import xml_string_to_dict  # type: ignore
+from textmining_scielo_scrapping.scripts.utils import xml_string_to_dict, load_json  # type: ignore
 
 scielo_api = env["scielo-api-path"]["xml"]
 scielo_front = env["scielo-api-path"]["front"]
@@ -64,7 +65,7 @@ def get_magazine_details(set_spec, country):
     # 3. Description (Misión): se ubica generalmente después de un <small> que contenga "Misión"
     description = None
     if journal_info:
-        small_mision = journal_info.find("small", string=lambda t: t and "Misión" in t)
+        small_mision = journal_info.find("small", string=lambda t: t and "Misión" in t or "Mission")
         if small_mision:
             # Suponemos que el siguiente párrafo <p> contiene la misión
             p = small_mision.find_next("p")
@@ -116,17 +117,63 @@ def transform_array(input_array):
     return output_array
 
 
-def get_magazine_list(country):
-    magazine_list_path = env["paths"]["get_magazines_path"]
+def get_magazine_from_front(country):
+    # URL de la página que contiene el listado
+    print("Error getting from API...")
+    print("Getting list from front")
+    get_magazines_path_front = env["paths"]["get_magazines_path_front"]
     scielo_country_path = env["scielo-path"][country]
-    url = f"{scielo_country_path}/{scielo_api}?{magazine_list_path}"
+    url = f"{scielo_country_path}/{scielo_front}?{get_magazines_path_front}"
     print(url)
-    response = requests.get(url, headers=env["headers"])
-    magazines_metadata = xml_string_to_dict(response.text)
+    # Se descarga la página
+    respuesta = requests.get(url)
+    respuesta.raise_for_status()  # Lanza una excepción si la descarga falla
+    html = respuesta.text
 
-    magazines_sets_list = transform_array(magazines_metadata["OAI-PMH"]["ListSets"]["set"])
+    # Se parsea el HTML con BeautifulSoup
+    soup = BeautifulSoup(html, 'html.parser')
+    
+    revistas = []
+    
+    # Buscamos todos los enlaces que tengan en su URL 'script=sci_serial'
+    for enlace in soup.find_all('a', href=True):
+        href = enlace['href']
+        if 'script=sci_serial' in href:
+            # Se analiza la URL para extraer los parámetros de la query string
+            partes = urlparse(href)
+            parametros = parse_qs(partes.query)
+            # Se extrae el valor del parámetro "pid" (si existe)
+            pid = parametros.get('pid', [None])[0]
+            # Se obtiene el texto del enlace, que es el nombre de la revista
+            nombre = enlace.get_text(strip=True)
+            
+            revistas.append({
+                'setSpec': pid,
+                'name': nombre
+            })
+    
+    return {"magazines": revistas, "country": country}
 
-    return {"magazines": magazines_sets_list, "country": country}
+
+def get_magazine_list(country):
+    try:
+        deprecated_path = f"/storage/temp/scielo_metadata/{country}_magazines.json"
+        if os.path.exists(deprecated_path):
+            return load_json(deprecated_path)
+        magazine_list_path = env["paths"]["get_magazines_path"]
+        scielo_country_path = env["scielo-path"][country]
+        url = f"{scielo_country_path}/{scielo_api}?{magazine_list_path}"
+        print(url)
+        response = requests.get(url, headers=env["headers"])
+        magazines_metadata = xml_string_to_dict(response.text)
+
+        print(f"Response: {response}")
+
+        magazines_sets_list = transform_array(magazines_metadata["OAI-PMH"]["ListSets"]["set"])
+
+        return {"magazines": magazines_sets_list, "country": country}
+    except:
+        return get_magazine_from_front(country)
 
 
 def generate_csv(magazines_details, output_file):
@@ -157,7 +204,15 @@ def process_magazines(country):
 
     if os.path.exists(output_file):
         print(f"Magazines metadata downloaded in: {output_file}")
-        return
+        magazines_sets_list = []
+        with open(output_file, newline="", encoding="utf-8") as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                magazines_sets_list.append({
+                    "setSpec": row.get("issn", "").strip(),
+                    "setName": row.get("magazine_name", "").strip()
+                })
+        return {"magazines": magazines_sets_list, "country": country}
 
     magazine_list_data = get_magazine_list(country)
     magazines = magazine_list_data.get("magazines", [])
@@ -177,3 +232,5 @@ def process_magazines(country):
 
     generate_csv(magazines_details, output_file)
     print(f"CSV generado: {output_file}")
+    return magazine_list_data
+

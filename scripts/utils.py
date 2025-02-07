@@ -1,4 +1,5 @@
 import xmltodict  # type: ignore
+import json
 
 
 def xml_string_to_dict(xml_string):
@@ -13,4 +14,19 @@ def xml_string_to_dict(xml_string):
         return xml_dict
     except Exception as e:
         print(f"Error al convertir XML a dict: {e}")
+        return None
+
+
+def load_json(file_path):
+    """
+    Carga un archivo JSON y lo devuelve como un diccionario.
+    :param file_path: Ruta del archivo JSON.
+    :return: Diccionario con los datos del JSON.
+    """
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+        return data
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        print(f"Error al cargar el JSON: {e}")
         return None
