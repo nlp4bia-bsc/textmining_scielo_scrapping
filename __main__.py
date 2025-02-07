@@ -1,13 +1,16 @@
 import datetime
-from airflow import DAG
-from airflow.decorators import task
-from textmining_scielo_scrapping.scripts.scrapping import (
-    get_magazine_list,
-    get_records_list,
-    get_records_text,
-    save_metadata,
+from airflow import DAG  # type: ignore
+from airflow.decorators import task  # type: ignore
+# from textmining_scielo_scrapping.scripts.scrapping import (  # type: ignore
+#     get_records_list,
+#     get_records_text,
+#     save_metadata,
+# )
+from textmining_scielo_scrapping.scripts.magazine_manager import (  # type: ignore
+    process_magazines
 )
-from textmining_scielo_scrapping.environment import env
+from textmining_scielo_scrapping.environment import env  # type: ignore
+
 
 @task
 def get_args(**kwargs):
@@ -16,6 +19,7 @@ def get_args(**kwargs):
         config.get('countries', list(env["scielo-path"].keys()))
     )
 
+
 with DAG(
     'textmining_scielo_scrapping',
     start_date=datetime.datetime(2024, 5, 10),
@@ -23,7 +27,7 @@ with DAG(
     description='Scrapping for Scielo repository',
 ) as dag:
     countries = get_args()
-    country_magazines = get_magazine_list.expand(country=countries)
-    country_records = get_records_list.expand(country_magazines=country_magazines)
-    records = get_records_text.expand(country_records=country_records)
-    save_metadata.expand(records=records)
+    country_magazines = process_magazines.expand(country=countries)
+    # country_records = get_records_list.expand(country_magazines=country_magazines)
+    # records = get_records_text.expand(country_records=country_records)
+    # save_metadata.expand(records=records)

@@ -1,4 +1,5 @@
-import xmltodict
+import xmltodict  # type: ignore
+
 
 def xml_string_to_dict(xml_string):
     try:

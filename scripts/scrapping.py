@@ -14,36 +14,6 @@ from textmining_scielo_scrapping.environment import env
 scielo_api = env["scielo-api-path"]["xml"]
 scielo_front = env["scielo-api-path"]["front"]
 
-def transform_array(input_array):
-    output_array = []
-
-    for item in input_array:
-        if isinstance(item['setSpec'], list) and isinstance(item['setName'], list):
-            for spec, name in zip(item['setSpec'], item['setName']):
-                output_array.append({
-                    "setSpec": spec,
-                    "setName": name
-                })
-
-        else:
-            output_array.append(item)
-
-    return output_array
-
-
-@task(map_index_template="{{ country }}")
-def get_magazine_list(country):
-    magazine_list_path = env["paths"]["get_magazines_path"]
-    scielo_country_path = env["scielo-path"][country]
-    url = f"{scielo_country_path}/{scielo_api}?{magazine_list_path}"
-    print(url)
-    response = requests.get(url, headers=env["headers"])
-    magazines_metadata = xml_string_to_dict(response.text)
-
-    magazines_sets_list = transform_array(magazines_metadata["OAI-PMH"]["ListSets"]["set"])
-
-    return {"magazines": magazines_sets_list, "country": country}
-
 
 def preprocess_json_records(records):
     preprocess_records = []
