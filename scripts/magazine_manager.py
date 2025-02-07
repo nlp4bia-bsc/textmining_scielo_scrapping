@@ -151,7 +151,7 @@ def process_magazines(country):
       2. Para cada revista, extrae los detalles de la página de SciELO.
       3. Genera el CSV con los datos recolectados.
     """
-    output_file = f"{country}_magazines.csv"
+    output_file = f"/storage/temp/scielov2/{country}/scielo_{country}_magazines.csv"
     magazine_list_data = get_magazine_list(country)
     magazines = magazine_list_data.get("magazines", [])
 
