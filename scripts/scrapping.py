@@ -166,8 +166,8 @@ def get_records_text(country_records):
     record_path = {}
 
     for magazine in magazine_list.keys():
-        if "Reflexiones en torno al poder del consumidor alimentario" == magazine:
-            record_path[magazine] = get_txt_path_bulk(magazine_list[magazine], country)
+        # if "Reflexiones en torno al poder del consumidor alimentario" == magazine:
+        record_path[magazine] = get_txt_path_bulk(magazine_list[magazine], country)
 
     return {"magazines": record_path, "country": country}
 

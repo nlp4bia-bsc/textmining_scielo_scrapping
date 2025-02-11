@@ -12,6 +12,15 @@ from textmining_scielo_scrapping.scripts.records_manager import (  # type: ignor
 from textmining_scielo_scrapping.scripts.magazine_manager import (  # type: ignore
     process_magazines
 )
+from textmining_scielo_scrapping.scripts.xml_manager import (  # type: ignore
+    get_xml
+)
+from textmining_scielo_scrapping.scripts.pdf_manager import (  # type: ignore
+    get_pdf
+)
+from textmining_scielo_scrapping.scripts.stadistics_manager import (  # type: ignore
+    create_statistics_file
+)
 from textmining_scielo_scrapping.environment import env  # type: ignore
 
 
@@ -32,5 +41,6 @@ with DAG(
     countries = get_args()
     country_magazines = process_magazines.expand(country=countries)
     country_records = get_records_list.expand(country_magazines=country_magazines)
-    # records = get_records_text.expand(country_records=country_records)
-    # save_metadata.expand(records=records)
+    country_xml = get_xml.expand(metadata=country_records)
+    country_pdf = get_pdf.expand(metadata=country_xml)
+    create_statistics_file(country_pdf)

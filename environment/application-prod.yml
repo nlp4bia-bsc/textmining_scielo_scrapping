@@ -26,6 +26,7 @@ paths:
   get_magazines_path: "verb=ListSets"
   get_records_path: "verb=ListRecords"
   get_pdf: "script=sci_pdf&pid="
+  get_xml: "scieloOrg/php/articleXML.php?pid="
   get_magazines_path_front: script=sci_alphabetic&lng=es&nrm=iso
 
 headers:

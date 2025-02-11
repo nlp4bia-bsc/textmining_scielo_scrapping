@@ -13,8 +13,14 @@ def xml_string_to_dict(xml_string):
         xml_dict = xmltodict.parse(xml_string_utf8)
         return xml_dict
     except Exception as e:
-        print(f"Error al convertir XML a dict: {e}")
-        return None
+        error_message = str(e)
+        # Solo para este error específico se hace skip, de lo contrario se relanza
+        if "not well-formed" in error_message or "invalid token" in error_message:
+            print(f"Skipping page due to XML conversion error: {e}")
+            return {}
+        else:
+            print(f"Error al convertir XML a dict: {e}")
+            return None
 
 
 def load_json(file_path):
