@@ -1,11 +1,6 @@
 import datetime
 from airflow import DAG  # type: ignore
 from airflow.decorators import task  # type: ignore
-# from textmining_scielo_scrapping.scripts.scrapping import (  # type: ignore
-#     get_records_list,
-#     get_records_text,
-#     save_metadata,
-# )
 from textmining_scielo_scrapping.scripts.records_manager import (  # type: ignore
     get_records_list
 )
@@ -17,6 +12,9 @@ from textmining_scielo_scrapping.scripts.xml_manager import (  # type: ignore
 )
 from textmining_scielo_scrapping.scripts.pdf_manager import (  # type: ignore
     get_pdf
+)
+from textmining_scielo_scrapping.scripts.txt_manager import (  # type: ignore
+    get_txt
 )
 from textmining_scielo_scrapping.scripts.stadistics_manager import (  # type: ignore
     create_statistics_file
@@ -42,5 +40,6 @@ with DAG(
     country_magazines = process_magazines.expand(country=countries)
     country_records = get_records_list.expand(country_magazines=country_magazines)
     country_xml = get_xml.expand(metadata=country_records)
-    country_pdf = get_pdf.expand(metadata=country_xml)
+    country_txt = get_txt.expand(metadata=country_xml)
+    country_pdf = get_pdf.expand(metadata=country_txt)
     create_statistics_file(country_pdf)

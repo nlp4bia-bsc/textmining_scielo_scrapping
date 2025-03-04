@@ -89,7 +89,7 @@ def create_statistics_file_script():
             with open(state_csv, newline="", encoding="utf-8") as csvfile:
                 reader = csv.DictReader(csvfile)
                 for row in reader:
-                    if row.get("path_xml", "").strip() and row.get("path_pdf", "").strip():
+                    if row.get("path_xml", "").strip() and row.get("path_txt", "").strip():
                         files_full_processed += 1
         else:
             files_full_processed = 0

@@ -95,7 +95,7 @@ def process_records_for_magazine(scielo_country_path, records_list_path, magazin
       4. Durante la iteración, si algún registro no tiene el campo "setSpec", se le asigna el valor de magazine["setSpec"].
     Retorna la lista de registros (artículos) procesados.
     """
-    magazine_id = magazine["setSpec"]
+    magazine_id = magazine["issn"]
     records = get_all_records_from_magazine(scielo_country_path, records_list_path, magazine_id)
     if not records:
         print(f"No se encontraron registros para {magazine['magazine_name']}. Se asigna 0 artículos.")
@@ -104,7 +104,7 @@ def process_records_for_magazine(scielo_country_path, records_list_path, magazin
     for record in records:
         record["articles"] = total_articles
         if not record.get("setSpec", "").strip():
-            record["setSpec"] = magazine["setSpec"]
+            record["setSpec"] = magazine_id
 
     # Guardar archivo CSV para la revista en la carpeta scielo_records_metadata
     csv_folder = f"/storage/temp/scielov2/{country}/scielo_records_metadata"
@@ -114,7 +114,7 @@ def process_records_for_magazine(scielo_country_path, records_list_path, magazin
     for record in records:
         # Si no tiene setSpec, se asigna el magazine_id (del objeto magazine)
         if not record.get("setSpec", "").strip():
-            record["setSpec"] = magazine["setSpec"]
+            record["setSpec"] = magazine_id
         all_keys.update(record.keys())
     fieldnames = list(all_keys)
     with open(csv_filename, "w", newline="", encoding="utf-8") as csvfile:
@@ -252,7 +252,7 @@ def update_magazine_stats(output_folder, country, magazine_rows, magazine_csv_fi
     el campo setSpec corresponde al valor de 'issn_api'.
     """
     import os
-    states_file = os.path.join(output_folder, f"scielov2/{country}/scielo_{country}_records_states.csv")
+    states_file = os.path.join(output_folder, f"scielo_{country}_records_states.csv")
     if os.path.exists(states_file):
         counts = {}
         # Contar la cantidad de registros (artículos) por setSpec en el archivo de estados.
